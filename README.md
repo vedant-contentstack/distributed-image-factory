@@ -64,6 +64,14 @@ flowchart LR
   UPD --- Grid
   SYS --- Grid
 ```
+**Per‑op fanout means the Coordinator takes one upload and “forks” it into independent tasks per transformation operation, then routes each task to that op’s worker pool.**
+- Per‑op: we create one task per operation (thumbnail, grayscale, blur, rotate90).
+- Fanout: those tasks are dispatched in parallel to the dedicated worker group for that operation (e.g., all workers whose mailbox starts with worker-thumbnail-).
+
+**In code:**
+- For each op, Coordinator discovers that op’s worker mailboxes (via etcd prefix /<ns>/workers/<op>/).
+- It builds a Grid group from those mailboxes and dispatches the op’s task to that group (we currently pick the fastest worker; you could also broadcast to all or round‑robin).
+- Result: the 4 ops run concurrently, each on a pool specialized for that op.
 
 ## Requirements
 - Go 1.22+
