@@ -144,6 +144,3 @@ docker compose up --build
 - `registry: unspecified net address ip` → bind to a concrete IP (not 0.0.0.0).
 - Dev 404 on `/metrics/json` → restart Vite; UI falls back to backend URL.
 
-## License
-MIT
-

@@ -21,28 +21,6 @@ services:
       timeout: 3s
       retries: 10
 
-  spanner:
-    image: gcr.io/cloud-spanner-emulator/emulator
-    ports:
-      - "9010:9010" # gRPC
-      - "9020:9020" # REST
-
-  spanner-init:
-    image: google/cloud-sdk:slim
-    depends_on:
-      - spanner
-    environment:
-      - SPANNER_EMULATOR_HOST=spanner:9010
-      - CLOUDSDK_CORE_PROJECT=demo
-      - CLOUDSDK_API_ENDPOINT_OVERRIDES_SPANNER=http://spanner:9020/
-    volumes:
-      - ./migrations:/migrations:ro
-    entrypoint: ["bash", "-lc"]
-    command: >-
-      "gcloud config set auth/disable_credentials true &&
-       gcloud spanner instances create test --config=emulator-config --description=\"Emu\" --nodes=1 || true &&
-       gcloud spanner databases create imagefactory --instance=test --ddl-file=/migrations/spanner.sql || true"
-
   server:
     build:
       context: .
@@ -50,28 +28,13 @@ services:
     environment:
       - ETCD_ENDPOINT=etcd:2379
       - GRID_BIND=0.0.0.0:9100
-      - SPANNER_DSN=projects/demo/instances/test/databases/imagefactory
-      - SPANNER_EMULATOR_HOST=spanner:9010
+      # - AUTO_START_LOCAL_WORKERS=true
+      # Uncomment to enable Spanner emulator later:
+      # - SPANNER_DSN=projects/demo/instances/test/databases/imagefactory
+      # - SPANNER_EMULATOR_HOST=spanner:9010
     depends_on:
       etcd:
         condition: service_healthy
-      spanner:
-        condition: service_started
-      spanner-init:
-        condition: service_started
     ports:
       - "8080:8080"
       - "9100:9100"
-
-  worker2:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    environment:
-      - ETCD_ENDPOINT=etcd:2379
-      - GRID_BIND=0.0.0.0:0
-    depends_on:
-      etcd:
-        condition: service_healthy
-      spanner:
-        condition: service_started

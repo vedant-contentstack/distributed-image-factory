@@ -16,7 +16,6 @@ const (
 )
 
 // Coordinator receives image upload events and fans out transform tasks to workers.
-// Stub implementation for initial skeleton.
 type Coordinator struct {
 	Server    *grid.Server
 	Etcd      *etcdv3.Client
